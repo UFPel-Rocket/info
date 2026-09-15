@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LASC 2026 · Rocket Challenge — onde estão os pontos</title>
+<meta name="description" content="Leitura interativa do placar final do Rocket Challenge da Latin American Space Challenge 2026: raio-X por critério, comparação entre equipes e simulador de cenários.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#140E24; --panel:#1D1636; --panel2:#261C48; --line:#3A2C68; --line-soft:#2C2153;
+  --text:#F0EBFF; --muted:#A496D2; --dim:#7D6FAA;
+  --violet:#9070FF; --violet-soft:#5B3FB8;
+  --cane:#7EC94B; --amber:#F5A83E; --coral:#F2604F; --gold:#FFD166;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--ink); color:var(--text);
+  font-family:Barlow,"Segoe UI",system-ui,sans-serif; font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0 0 auto 0; height:420px; pointer-events:none; z-index:0;
+  background:radial-gradient(110% 100% at 22% 0%, #3A2270 0%, rgba(20,14,36,0) 62%);
+}
+.wrap{position:relative; z-index:1; max-width:1160px; margin:0 auto; padding:0 22px}
+h1,h2,h3,.num{font-family:Archivo,"Archivo",system-ui,sans-serif}
+h2{font-size:1.45rem; font-weight:700; letter-spacing:-.015em; margin:0 0 6px}
+h3{font-size:1.03rem; font-weight:600; letter-spacing:-.01em; margin:0 0 10px}
+p{margin:0 0 14px; max-width:68ch}
+a{color:var(--violet)}
+.num{font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.sub{color:var(--muted); font-size:.93rem}
+.tiny{font-size:.8rem; color:var(--dim); line-height:1.45}
+section{padding:46px 0; border-top:1px solid var(--line-soft)}
+section:first-of-type{border-top:0}
+.shead{margin-bottom:22px}
+
+/* ---------- topo ---------- */
+header.top{padding:34px 0 8px}
+.brandline{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-bottom:26px}
+.brandline b{font-family:Archivo; font-weight:800; font-size:.95rem; letter-spacing:.01em}
+.brandline span{color:var(--dim); font-size:.85rem}
+.hero-title{font-size:clamp(2rem,5.2vw,3.35rem); font-weight:800; letter-spacing:-.035em; line-height:1.02; margin:0 0 14px}
+.hero-title em{font-style:normal; color:var(--violet)}
+.hero-lead{color:var(--muted); max-width:60ch; font-size:1.04rem}
+
+/* ---------- seletor ---------- */
+.picker{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:26px 0 30px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px}
+.picker label{font-size:.78rem; color:var(--dim); display:block; margin-bottom:3px}
+select,input[type=search],input[type=text]{
+  background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:7px;
+  padding:8px 10px; font-family:Barlow; font-size:.93rem; min-width:210px}
+select:focus-visible,input:focus-visible,button:focus-visible,.chip:focus-visible{outline:2px solid var(--violet); outline-offset:2px}
+
+/* ---------- placar do time ---------- */
+.scorecard{display:grid; grid-template-columns:minmax(260px,1.05fr) 2fr; gap:28px; align-items:start}
+.bignum{font-size:clamp(3rem,8vw,4.6rem); font-weight:800; line-height:.92; letter-spacing:-.04em}
+.bignum small{font-size:.28em; font-weight:600; color:var(--dim); letter-spacing:0}
+.posrow{display:flex; gap:26px; margin-top:18px; flex-wrap:wrap}
+.pos b{display:block; font-family:Archivo; font-size:1.75rem; font-weight:800; letter-spacing:-.03em}
+.pos span{font-size:.82rem; color:var(--dim)}
+.tagline{margin-top:18px; font-size:.95rem; color:var(--muted); border-left:2px solid var(--violet); padding-left:12px}
+
+/* ---------- cascata ---------- */
+.fall{display:flex; flex-direction:column; gap:3px}
+.fallhead{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:12px; flex-wrap:wrap}
+.frow{display:grid; grid-template-columns:190px 1fr 74px; gap:12px; align-items:center;
+  padding:5px 0; border-radius:6px}
+.frow .fl{font-size:.86rem; color:var(--muted); text-align:right; line-height:1.25}
+.ftrack{height:22px; background:var(--panel); border-radius:4px; position:relative; overflow:hidden}
+.fbar{position:absolute; top:0; bottom:0; border-radius:3px}
+.fbar.got{background:linear-gradient(90deg,#4B3A8F,#6E51C9)}
+.fbar.lost{opacity:.95}
+.fval{font-family:Archivo; font-variant-numeric:tabular-nums; font-size:.9rem; font-weight:600; text-align:right}
+.frow.hl{background:rgba(144,112,255,.10)}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:.8rem; color:var(--dim); margin-top:14px}
+.legend i{display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px}
+
+/* ---------- chips ---------- */
+.chips{display:flex; gap:8px; flex-wrap:wrap}
+.chip{background:var(--panel2); border:1px solid var(--line); color:var(--muted); border-radius:20px;
+  padding:5px 13px; font-size:.83rem; cursor:pointer; font-family:Barlow}
+.chip[aria-pressed=true]{background:var(--violet-soft); border-color:var(--violet); color:#fff}
+
+/* ---------- cards ---------- */
+.grid{display:grid; gap:14px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:16px 18px}
+.card h4{margin:0 0 6px; font-family:Archivo; font-size:.82rem; font-weight:600; color:var(--dim)}
+.card .v{font-family:Archivo; font-size:1.7rem; font-weight:800; letter-spacing:-.03em}
+.card p{font-size:.86rem; color:var(--muted); margin:6px 0 0}
+
+/* ---------- barras critério ---------- */
+.crit{border-top:1px solid var(--line-soft); padding:14px 0}
+.crit:first-child{border-top:0}
+.critHead{display:flex; justify-content:space-between; gap:14px; align-items:baseline; margin-bottom:8px}
+.critName{font-weight:600; font-size:.97rem}
+.critVal{font-family:Archivo; font-variant-numeric:tabular-nums; font-weight:700}
+.track{position:relative; height:26px; background:var(--panel); border:1px solid var(--line-soft); border-radius:5px}
+.bar{position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#54409E,#8F6BFF); border-radius:4px}
+.mark{position:absolute; top:-4px; bottom:-4px; width:2px}
+.mark::after{content:attr(data-l); position:absolute; top:-16px; left:50%; transform:translateX(-50%);
+  font-size:.66rem; color:var(--dim); white-space:nowrap}
+.badge{font-size:.72rem; padding:2px 8px; border-radius:20px; font-weight:600}
+.b-forte{background:rgba(126,201,75,.16); color:var(--cane)}
+.b-ok{background:rgba(164,150,210,.14); color:var(--muted)}
+.b-lac{background:rgba(245,168,62,.16); color:var(--amber)}
+.b-crit{background:rgba(242,96,79,.18); color:var(--coral)}
+
+/* ---------- tabela ---------- */
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:var(--r)}
+table{border-collapse:collapse; width:100%; font-size:.87rem; min-width:860px}
+th,td{padding:8px 10px; text-align:right; border-bottom:1px solid var(--line-soft); white-space:nowrap}
+th{position:sticky; top:0; background:var(--panel2); color:var(--muted); font-weight:600; font-size:.76rem; cursor:pointer; z-index:2}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tbody tr:hover{background:rgba(144,112,255,.07)}
+tr.me td{background:rgba(144,112,255,.15); font-weight:600}
+td.n{font-variant-numeric:tabular-nums; font-family:Archivo}
+.dot{display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:6px; vertical-align:1px}
+
+/* ---------- simulador ---------- */
+.simgrid{display:grid; grid-template-columns:1.15fr .85fr; gap:26px; align-items:start}
+.slider{margin-bottom:15px}
+.slider .sl{display:flex; justify-content:space-between; font-size:.86rem; margin-bottom:5px; gap:10px}
+.slider .sl b{font-family:Archivo; font-variant-numeric:tabular-nums}
+.delta{font-size:.78rem; margin-left:7px}
+.up{color:var(--cane)} .down{color:var(--coral)}
+input[type=range]{width:100%; -webkit-appearance:none; appearance:none; height:5px; border-radius:3px;
+  background:linear-gradient(90deg,var(--violet-soft) var(--p,0%), var(--panel2) var(--p,0%)); outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:17px; height:17px; border-radius:50%;
+  background:var(--text); border:3px solid var(--violet); cursor:pointer}
+input[type=range]::-moz-range-thumb{width:14px; height:14px; border-radius:50%; background:var(--text);
+  border:3px solid var(--violet); cursor:pointer}
+.simout{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:20px; position:sticky; top:16px}
+.simtot{font-family:Archivo; font-size:2.7rem; font-weight:800; letter-spacing:-.04em; line-height:1}
+.ladder{margin-top:16px; border-top:1px solid var(--line-soft); padding-top:12px}
+.lrow{display:grid; grid-template-columns:26px 1fr auto; gap:8px; font-size:.83rem; padding:4px 0; align-items:baseline}
+.lrow.passed{color:var(--cane)}
+.lrow.target{color:var(--muted)}
+.lrow span:last-child{font-variant-numeric:tabular-nums; font-family:Archivo}
+button{background:var(--violet-soft); color:#fff; border:1px solid var(--violet); border-radius:7px;
+  padding:8px 14px; font-family:Barlow; font-size:.88rem; cursor:pointer}
+button.ghost{background:transparent; border-color:var(--line); color:var(--muted)}
+
+/* ---------- prioridades ---------- */
+.prio{display:grid; grid-template-columns:30px 1fr 120px 110px; gap:12px; align-items:center;
+  padding:11px 0; border-top:1px solid var(--line-soft)}
+.prio b.rk{font-family:Archivo; font-size:1.15rem; color:var(--dim)}
+.prio .pn{font-size:.95rem}
+.prio .pn small{display:block; color:var(--dim); font-size:.8rem}
+.prio .pv{font-family:Archivo; font-variant-numeric:tabular-nums; text-align:right; font-weight:700}
+.prio .pp{text-align:right; font-size:.84rem; color:var(--muted)}
+
+/* ---------- explicação ---------- */
+.steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:14px}
+.step{background:var(--panel); border:1px solid var(--line); border-radius:var(--r); padding:15px 16px}
+.step .cap{font-family:Archivo; font-size:.78rem; color:var(--violet); font-weight:600; margin-bottom:5px}
+.step h4{margin:0 0 6px; font-size:.97rem}
+.step p{font-size:.85rem; color:var(--muted); margin:0}
+.curvewrap{display:grid; grid-template-columns:1.2fr .8fr; gap:24px; align-items:center}
+svg .ax{stroke:var(--line); stroke-width:1}
+svg .curve{fill:none; stroke:var(--violet); stroke-width:2.5}
+svg .gl{stroke:var(--line-soft); stroke-width:1; stroke-dasharray:3 4}
+svg text{font-family:Barlow; font-size:11px; fill:var(--dim)}
+.glossary dt{font-weight:600; font-size:.9rem; margin-top:11px}
+.glossary dd{margin:2px 0 0; color:var(--muted); font-size:.87rem}
+footer{padding:36px 0 60px; color:var(--dim); font-size:.83rem; border-top:1px solid var(--line-soft)}
+
+@media (max-width:900px){
+  .scorecard,.simgrid,.curvewrap{grid-template-columns:1fr}
+  .g2,.g3{grid-template-columns:1fr 1fr}
+  .frow{grid-template-columns:120px 1fr 62px}
+  .frow .fl{font-size:.76rem}
+  .simout{position:static}
+  .prio{grid-template-columns:24px 1fr 90px; }
+  .prio .pp{grid-column:2/4; text-align:left}
+}
+@media (max-width:560px){ .g2,.g3{grid-template-columns:1fr} }
+@media (prefers-reduced-motion:no-preference){
+  .fbar,.bar{transition:width .35s cubic-bezier(.4,0,.2,1)}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="brandline">
+    <b>LASC 2026 · Rocket Challenge</b>
+    <span>7ª Latin American Space Challenge — Sugarcane Launch Range, Iacanga (SP)</span>
+  </div>
+  <h1 class="hero-title">O placar não diz o que fazer.<br><em>Esta leitura diz.</em></h1>
+  <p class="hero-lead">102 missões, 9 critérios, 1000 pontos possíveis. Escolha uma missão e veja onde os pontos ficaram, quanto vale cada correção e que posição ela compraria.</p>
+
+  <div class="picker">
+    <div>
+      <label for="teamSel">Missão em análise</label>
+      <select id="teamSel"></select>
+    </div>
+    <div>
+      <label for="cmpSel">Comparar com</label>
+      <select id="cmpSel">
+        <option value="best">Melhor nota de cada critério na edição</option>
+        <option value="catlead">Líder da minha categoria</option>
+        <option value="champ">Campeão geral do Rocket Challenge</option>
+        <option value="catmed">Mediana da minha categoria</option>
+      </select>
+    </div>
+  </div>
+</header>
+
+<section id="resumo" style="padding-top:0">
+  <div class="scorecard">
+    <div>
+      <div class="bignum num" id="tScore">—<small> / 1000</small></div>
+      <div class="posrow">
+        <div class="pos"><b class="num" id="tRank">—</b><span id="tRankL">geral</span></div>
+        <div class="pos"><b class="num" id="tCRank">—</b><span id="tCRankL">na categoria</span></div>
+        <div class="pos"><b class="num" id="tGap">—</b><span>pontos até subir 1 posição</span></div>
+      </div>
+      <div class="tagline" id="tTag"></div>
+    </div>
+
+    <div>
+      <div class="fallhead">
+        <div>
+          <h2>Para onde foram os pontos</h2>
+          <p class="sub" id="fallSub" style="margin:0"></p>
+        </div>
+      </div>
+      <div class="fall" id="fall"></div>
+      <div class="legend">
+        <span><i style="background:#6E51C9"></i>pontos conquistados</span>
+        <span><i style="background:var(--coral)"></i>perda grande</span>
+        <span><i style="background:var(--amber)"></i>perda média</span>
+        <span><i style="background:var(--dim)"></i>perda pequena</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="raiox">
+  <div class="shead">
+    <h2>Raio-X por critério</h2>
+    <p class="sub">Cada barra mostra a nota da missão. Os traços marcam a mediana do grupo de referência e a melhor nota da edição, para separar força real de força aparente.</p>
+    <p class="tiny" id="peerNote" style="max-width:66ch"></p>
+  </div>
+  <div id="crits"></div>
+  <div class="grid g2" style="margin-top:22px">
+    <div class="card"><h4>Fortalezas</h4><div id="fortes" class="sub"></div></div>
+    <div class="card"><h4>Lacunas</h4><div id="lacunas" class="sub"></div></div>
+  </div>
+</section>
+
+<section id="prioridades">
+  <div class="shead">
+    <h2>O que atacar primeiro</h2>
+    <p class="sub">Cada critério vale um número de pontos ainda disponíveis — e um número de posições. A ordem abaixo é por posições ganhas, não por pontos: 40 pontos num critério concorrido movem menos que 15 pontos num critério onde o pelotão está colado.</p>
+  </div>
+  <div id="prio"></div>
+  <p class="tiny" style="margin-top:14px">Posições ganhas = quantas missões seriam ultrapassadas no ranking geral se este critério, sozinho, chegasse à melhor nota da edição, mantendo tudo o mais igual.</p>
+</section>
+
+<section id="simulador">
+  <div class="shead">
+    <h2>Simulador de cenários</h2>
+    <p class="sub">Mexa nos critérios e veja a nota e a posição se recalcularem com as mesmas fórmulas do placar oficial. O apogeu real recalcula a nota de voo pela fórmula da LASC, não por estimativa.</p>
+  </div>
+  <div class="simgrid">
+    <div>
+      <div id="sliders"></div>
+      <div style="display:flex; gap:9px; flex-wrap:wrap; margin-top:6px">
+        <button id="reset" class="ghost">Voltar ao resultado real</button>
+        <button id="presetNominal">Cenário: recuperação nominal</button>
+        <button id="presetTop">Cenário: melhor nota de cada critério</button>
+      </div>
+    </div>
+    <div class="simout">
+      <div class="sub">Nota simulada</div>
+      <div class="simtot" id="simTot">—</div>
+      <div id="simDelta" class="sub" style="margin-top:4px">—</div>
+      <div style="display:flex; gap:24px; margin-top:16px">
+        <div class="pos"><b class="num" id="simRank">—</b><span>geral</span></div>
+        <div class="pos"><b class="num" id="simCRank">—</b><span>na categoria</span></div>
+      </div>
+      <div class="ladder" id="ladder"></div>
+    </div>
+  </div>
+</section>
+
+<section id="placar">
+  <div class="shead">
+    <h2>Placar completo</h2>
+    <p class="sub">Clique em qualquer cabeçalho para reordenar. Clique numa linha para analisar aquela missão.</p>
+  </div>
+  <div class="picker" style="margin-top:0">
+    <div><label for="fCat">Categoria</label><select id="fCat"></select></div>
+    <div><label for="fCountry">País</label><select id="fCountry"></select></div>
+    <div><label for="fSearch">Buscar equipe ou missão</label><input type="search" id="fSearch" placeholder="ex.: UFPel"></div>
+    <div style="align-self:flex-end"><span class="tiny" id="fCount"></span></div>
+  </div>
+  <div class="tablewrap"><table id="tbl">
+    <thead><tr>
+      <th class="l" data-s="rank">#</th><th class="l" data-s="team">Equipe</th><th class="l" data-s="mission">Missão</th>
+      <th class="l" data-s="cat">Categoria</th><th data-s="pu">P.U.</th><th data-s="patch">Patch</th>
+      <th data-s="video">Vídeo</th><th data-s="mkt">Mkt</th><th data-s="report">Relatório</th>
+      <th data-s="pres">Apresent.</th><th data-s="design">Design</th><th data-s="perf">Voo</th>
+      <th data-s="bonus">Recup.</th><th data-s="total">Total</th>
+    </tr></thead>
+    <tbody id="tbody"></tbody>
+  </table></div>
+</section>
+
+<section id="comofunciona">
+  <div class="shead">
+    <h2>Como uma missão é avaliada</h2>
+    <p class="sub">A nota não sai do voo. O voo é menos da metade dela.</p>
+  </div>
+  <div class="steps" id="steps"></div>
+
+  <div class="curvewrap" style="margin-top:34px">
+    <div>
+      <h3>A nota de voo é uma curva de precisão</h3>
+      <p class="sub">Acertar o apogeu previsto vale 350 pontos. A cada metro de erro em relação ao alvo, a nota cai em linha reta até zerar. A tolerância muda com a categoria: quem mira 500 m tem faixa proporcionalmente mais larga (71% do alvo) do que quem mira 3000 m (29%), porque errar 100 m em meio quilômetro é muito mais grave do que em três.</p>
+      <div class="chips" id="curveChips" style="margin:14px 0 10px"></div>
+      <div class="slider">
+        <div class="sl"><span>Apogeu real atingido</span><b class="num" id="curveVal">—</b></div>
+        <input type="range" id="curveRange">
+      </div>
+      <p class="sub" id="curveOut" style="font-size:.95rem"></p>
+    </div>
+    <svg viewBox="0 0 380 260" id="curveSvg" role="img" aria-label="Curva de pontuação por precisão de apogeu"></svg>
+  </div>
+
+  <div style="margin-top:34px">
+    <h3>Vocabulário da competição</h3>
+    <dl class="glossary" id="gloss"></dl>
+  </div>
+</section>
+
+<footer>
+  <p style="max-width:70ch">Fonte: planilha oficial <b>2026 LASC Final Scoreboard</b>, aba Rocket Challenge — 102 missões. Os totais aqui foram recalculados a partir dos critérios individuais e batem com a coluna oficial em todas as 102 linhas. A fórmula da nota de voo é a mesma da planilha. As abas Satellite e Lander não entram nesta análise.</p>
+  <p class="tiny">Tetos por critério: 350 pontos na nota de voo e 550 no bloco de operações de lançamento vêm da planilha. Para relatório, vídeo e patch, a planilha não declara o teto — as comparações usam a melhor nota efetivamente obtida na edição, o que é uma referência mais dura e mais útil do que um teto teórico.</p>
+</footer>
+
+</div>
+<script>
+const RAW = [[3,"Airumã","3 km SRM","UFABC Rocket Design","Brazil",5.0,5.0,5.0,5.0,23.0,28.0,10.0,188.57,10.0,94.0,3000.0,2947.0,2962.3,334.8333,"Nominal",215.1667,550.0,923.57],[7,"ATLAS","3 km SRM","Kosmos Rocketry","Brazil",5.0,5.0,5.0,5.0,20.0,44.0,10.0,187.0,10.0,92.0,3000.0,3313.0,2995.14,348.0448,"Major",124.9552,473.0,856.0],[33,"Arceus","3 km SRM","GFRJ","Brazil",5.0,5.0,5.0,5.0,17.0,44.0,10.0,150.69,0.0,82.0,3000.0,3000.0,2885.5,303.9368,"Nominal",225.0632,529.0,852.69],[47,"Decennium","1 km SRM","GFRJ","Brazil",5.0,5.0,5.0,5.0,17.0,42.0,10.0,143.0,0.0,91.0,1000.0,781.0,1027.0,331.1,"Nominal",149.9,481.0,804.0],[67,"Carcará","1 km SRM","Programa CEOS","Brazil",5.0,5.0,5.0,5.0,21.0,44.0,10.0,164.0,10.0,60.0,1000.0,765.0,1013.0,340.9,"Major",125.1,466.0,795.0],[48,"E Agora José?","0.5 km SRM","Falcon-6 Rocket Design UNIFEI","Brazil",5.0,5.0,5.0,5.0,15.0,34.0,10.0,149.65,10.0,63.0,500.0,412.493,415.4,266.5915,"Nominal",200.4085,467.0,768.65],[44,"Prometeo","1 km SRM","Beyond UP - Stella Ignis","Mexico",5.0,5.0,5.0,5.0,17.0,37.0,10.0,179.59,10.0,88.0,1000.0,1000.0,1137.0,254.1,"Ballistic",124.9,379.0,740.59],[46,"Quark III","0.5 km SRM","Tau Rocket Team","Brazil",5.0,5.0,5.0,5.0,14.0,43.0,10.0,186.43,0.0,70.0,500.0,500.498,556.0,294.7887,"Major",100.2113,395.0,738.43],[59,"Weiss","1 km SRM","Cactus Rockets Design","Brazil",5.0,5.0,5.0,5.0,12.0,37.0,0.0,130.19,0.0,76.0,1000.0,1470.0,805.6,213.92,"Nominal",225.08,439.0,714.19],[24,"K.I.S.S","3 km SRM","ITA Rocket Design","Brazil",5.0,5.0,5.0,5.0,21.0,36.0,10.0,180.32,0.0,0.0,3000.0,3407.0,2861.5,294.2816,"Nominal",149.7184,444.0,711.32],[29,"Midnight II","1 km SRM","Elysium Rocket UVA","Brazil",5.0,5.0,5.0,5.0,0.0,36.0,10.0,115.0,10.0,57.0,1000.0,846.735,957.1,319.97,"Nominal",125.03,445.0,693.0],[72,"Hemera","3 km SRM","Minerva Rockets","Brazil",5.0,5.0,5.0,5.0,16.0,31.0,10.0,189.11,10.0,97.0,3000.0,3000.0,3393.0,191.8966,"Ballistic",125.1034,317.0,690.11],[11,"Dédalo","1 km SRM","Serra Rocketry","Brazil",5.0,5.0,5.0,5.0,16.0,27.0,0.0,166.42,0.0,82.0,1000.0,1000.0,820.0,224.0,"Nominal",150.0,374.0,685.42],[26,"LAZARUS","3 km SRM","Laika/Sirius Rocket Team","Mexico",5.0,5.0,5.0,5.0,22.0,0.0,0.0,156.89,10.0,82.0,3000.0,3232.69,2652.0,210.0,"Nominal",150.0,360.0,650.89],[35,"MWTH","1 km SRM","Equipe Rocket","Brazil",5.0,5.0,5.0,5.0,21.0,40.0,10.0,131.97,10.0,76.0,1000.0,1000.0,1191.4,216.02,"Major",124.98,341.0,649.97],[31,"Minuano","0.5 km SRM","UFPel Rocket Team","Brazil",5.0,5.0,5.0,5.0,17.0,33.0,10.0,163.31,0.0,63.0,500.0,545.88,560.0,290.8451,"Major",50.1549,341.0,647.31],[12,"DEIMOS II","1 km SRM","Kosmos Rocketry","Brazil",5.0,5.0,5.0,5.0,21.0,44.0,10.0,183.86,10.0,91.0,1000.0,1000.0,681.0,126.7,"Ballistic",125.3,252.0,631.86],[51,"Thonyan","0.5 km SRM","Serra Rocketry","Brazil",5.0,5.0,5.0,5.0,14.0,33.0,0.0,186.9,0.0,76.0,500.0,500.0,359.0,210.9859,"Major",50.0141,261.0,590.9],[22,"IGNIS-1","1 km SRM","Ignitia Rocket Lab","Mexico",5.0,5.0,5.0,5.0,22.0,42.0,10.0,182.69,10.0,94.0,1000.0,1000.0,308.0,0.0,"Nominal",150.0,150.0,530.69],[36,"Neblina","3 km SRM","Antares Foguetemodelismo","Brazil",5.0,5.0,5.0,5.0,13.0,36.0,0.0,178.21,10.0,89.0,3000.0,3000.0,0.0,0.0,"Not Recovered",125.0,125.0,471.21],[88,"Atlas","3 km SRM","TOPUS Projetos Aeroespaciais","Brazil",5.0,5.0,5.0,5.0,20.0,34.0,10.0,174.48,10.0,88.0,3000.0,3143.92,1892.0,0.0,"Major",100.0,100.0,456.48],[52,"Millenium","1 km SRM","TOPUS Projetos Aeroespaciais","Brazil",5.0,5.0,5.0,5.0,21.0,39.0,10.0,181.43,0.0,85.0,1000.0,1000.0,0.0,0.0,"Not Recovered",100.0,100.0,456.43],[28,"Merak","1 km SRM","EPTA","Brazil",5.0,5.0,5.0,5.0,23.0,43.0,10.0,152.33,10.0,87.0,1000.0,1050.0,286.1,0.0,"Major",100.0,100.0,445.33],[60,"Yhprum II","0.5 km SRM","FEG Rocket Design","Brazil",5.0,5.0,5.0,5.0,9.0,36.0,10.0,144.05,0.0,80.0,500.0,500.0,229.0,82.8169,"Major",50.1831,133.0,432.05],[19,"Harpia","1 km SRM","Fênix - Estudos Astronáuticos","Brazil",5.0,5.0,5.0,5.0,22.0,40.0,10.0,185.5,10.0,93.0,1000.0,1000.0,0.0,0.0,"Not Recovered",50.0,50.0,430.5],[15,"GARUDA","1 km SRM","DJS Impulse","India",5.0,5.0,5.0,5.0,25.0,45.0,10.0,178.43,10.0,90.0,1000.0,1000.0,0.0,0.0,"Ballistic",50.0,50.0,428.43],[18,"Hádron","1 km SRM","Tau Rocket Team","Brazil",5.0,5.0,5.0,5.0,18.0,42.0,10.0,160.2,0.0,71.0,1000.0,1000.0,0.0,0.0,"Not Recovered",100.0,100.0,421.2],[13,"Orion","Hybrid/Liquid","Projeto Jupiter","Brazil",5.0,5.0,5.0,5.0,21.0,28.0,10.0,183.6,10.0,91.0,3000.0,3000.0,0.0,0.0,"CATO",50.0,50.0,413.6],[77,"Magnus Squilla","1 km SRM","Orbit NITT","India",5.0,5.0,5.0,5.0,21.0,33.0,10.0,114.51,10.0,75.0,1000.0,1000.0,0.0,0.0,"CATO",125.0,125.0,408.51],[4,"AKBAL II","3 km SRM","PotroRockets SAFI - UAEMex","Mexico",5.0,5.0,5.0,5.0,12.0,30.0,10.0,133.11,10.0,62.0,3000.0,3000.0,0.0,0.0,"Not Recovered",125.0,125.0,402.11],[95,"SkyWalker-1","3 km SRM","Bravo Aerospace Team","Brazil",5.0,5.0,5.0,5.0,16.0,36.0,10.0,138.95,10.0,37.0,3000.0,3000.0,0.0,0.0,"CATO",125.0,125.0,392.95],[14,"Endurance","3 km SRM","Orion Aerospace Design","Brazil",5.0,5.0,5.0,5.0,17.0,32.0,10.0,169.28,10.0,78.0,3000.0,3000.0,0.0,0.0,"Not Recovered",50.0,50.0,386.28],[58,"VOID II","1 km SRM","Vortex Rocket Design","Brazil",5.0,5.0,5.0,5.0,19.0,39.0,10.0,162.55,0.0,85.0,1000.0,1000.0,0.0,0.0,"Not Recovered",50.0,50.0,385.55],[40,"Polaris","0.5 km SRM","Beyond Rocket Design UNIFEI","Brazil",5.0,5.0,5.0,5.0,19.0,40.0,10.0,143.05,10.0,91.0,500.0,500.0,0.0,0.0,"Not Recovered",50.0,50.0,383.05],[68,"Dies Irae","1 km SRM","Beyond Rocket Design UNIFEI","Brazil",5.0,5.0,5.0,5.0,22.0,39.0,10.0,182.37,10.0,98.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,381.37],[82,"Nebula II","1 km SRM","Void Laboratories","Brazil",5.0,5.0,0.0,5.0,10.0,30.0,0.0,104.81,0.0,75.0,1000.0,1000.0,0.0,0.0,"Not Recovered",125.0,125.0,359.81],[25,"Kuntur","0.5 km SRM","GIA - PUCP","Perú",5.0,5.0,5.0,5.0,10.0,37.0,10.0,124.7,10.0,77.0,500.0,500.0,0.0,0.0,"Not Recovered",50.0,50.0,338.7],[39,"Padawan 1","0.5 km SRM","Bravo Aerospace Team","Brazil",5.0,5.0,5.0,5.0,12.0,37.0,10.0,137.65,10.0,50.0,500.0,500.0,0.0,0.0,"Not Recovered",50.0,50.0,326.65],[30,"Minerva I","1 km SRM","Coheteria Beauchef","Chile",5.0,5.0,5.0,5.0,23.0,43.0,10.0,92.08,10.0,74.0,1000.0,1000.0,0.0,0.0,"CATO",50.0,50.0,322.08],[102,"Zagaia","1 km SRM","Vento Norte UEA","Brazil",5.0,5.0,5.0,5.0,14.0,37.0,10.0,72.74,10.0,57.0,1000.0,1000.0,0.0,0.0,"Not Recovered",100.0,100.0,320.74],[32,"Calupo","Hybrid/Liquid","IluIkalt Project","Mexico",5.0,5.0,5.0,5.0,16.0,36.0,0.0,166.22,10.0,72.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,320.22],[63,"Alpha-UM","1 km SRM","Polaris Rocketry","Brazil",5.0,5.0,5.0,5.0,19.0,30.0,10.0,102.67,0.0,88.0,1000.0,1000.0,0.0,0.0,"Ballistic",50.0,50.0,319.67],[97,"Sumaq-1","0.5 km SRM","APU Space","Perú",5.0,5.0,5.0,5.0,11.0,40.0,10.0,105.64,0.0,82.0,500.0,500.0,0.0,0.0,"Not Recovered",50.0,50.0,318.64],[17,"Gorilla","1 km SRM","ITA Rocket Design","Brazil",5.0,5.0,5.0,5.0,20.0,41.0,10.0,176.12,0.0,0.0,1000.0,1000.0,0.0,0.0,"Ballistic",50.0,50.0,317.12],[41,"Project Ark","0.5 km SRM","Gravity","Bolivia",5.0,5.0,0.0,5.0,9.0,37.0,0.0,82.18,0.0,44.0,500.0,500.0,0.0,0.0,"CATO",125.0,125.0,312.18],[16,"Goddard","0.5 km SRM","Gravidade Zero","Brazil",5.0,5.0,5.0,5.0,5.0,36.0,10.0,100.03,10.0,73.0,500.0,500.0,133.3,0.0,"Ballistic",50.0,50.0,304.03],[54,"Tucano II","3 km SRM","Fênix - Estudos Astronáuticos","Brazil",5.0,5.0,5.0,5.0,22.0,38.0,10.0,186.86,10.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,286.86],[99,"Theseus","0.5 km SRM","Apex Rocketry","Brazil",5.0,5.0,5.0,5.0,17.0,31.0,10.0,126.22,0.0,80.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,284.22],[45,"Prometheus I","1 km SRM","LAPESP","Brazil",5.0,5.0,5.0,5.0,22.0,30.0,0.0,158.76,0.0,43.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,273.76],[23,"Jaguar II","1 km SRM","Balam Muyal","Mexico",5.0,5.0,5.0,5.0,14.0,38.0,10.0,109.32,0.0,31.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,222.32],[91,"Rengi_1","3 km SRM","Etherea","Colombia",5.0,5.0,5.0,5.0,3.0,38.0,0.0,114.22,10.0,35.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,220.22],[62,"Lakshya-A3","3 km SRM","Agnipaksha","India",5.0,5.0,5.0,5.0,14.0,26.0,0.0,77.86,10.0,65.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,212.86],[2,"Adastra-1000","1 km SRM","KökTunga Rocketry Team","Türkiye",5.0,5.0,5.0,5.0,14.0,34.0,0.0,122.9,10.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,200.9],[79,"MG-REIS-N1","1 km SRM","Innovare Rocket","Brazil",5.0,0.0,5.0,5.0,14.0,37.0,0.0,102.13,0.0,30.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,198.13],[66,"Arrakis","0.5 km SRM","Carcará Rocket Design","Brazil",5.0,5.0,0.0,5.0,16.0,20.0,10.0,0.0,0.0,40.0,500.0,500.0,0.0,0.0,"Ballistic",50.0,50.0,151.0],[37,"Hefesto","3 km SRM","Supernova","Brazil",5.0,5.0,5.0,5.0,23.0,37.0,0.0,0.0,10.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,90.0],[8,"Austral","1 km SRM","Proyecto Argentum","Argentina",5.0,5.0,5.0,5.0,17.0,40.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,77.0],[5,"Alliance Idomitus","1 km SRM","I2RT","Colombia",5.0,5.0,5.0,5.0,17.0,37.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,74.0],[43,"Project Teddy","Hybrid/Liquid","2Space","Romania",5.0,5.0,0.0,0.0,18.0,44.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,72.0],[89,"Rasga-Mortalha III","0.5 km SRM","Potiguar Rocket Design","Brazil",5.0,5.0,0.0,0.0,22.0,38.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,70.0],[42,"Project Dhawan","Hybrid/Liquid","STES Rocketry","India",5.0,5.0,0.0,0.0,15.0,44.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,69.0],[65,"Antares","1 km SRM","Space M","Brazil",5.0,0.0,0.0,0.0,19.0,43.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,67.0],[49,"SATYAKI","1 km SRM","SPACECLUB_RIT","India",5.0,5.0,0.0,0.0,19.0,37.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,66.0],[90,"Rembulan","3 km SRM","ITB Rocketry","Indonesia",5.0,5.0,0.0,0.0,16.0,40.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,66.0],[21,"Icaro I","1 km SRM","Equipo Paulet","Perú",5.0,5.0,5.0,5.0,9.0,37.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,66.0],[57,"Vittorio","3 km SRM","Rocking Science","Mexico",5.0,5.0,0.0,5.0,11.0,39.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,65.0],[85,"Pratap","1 km SRM","Pratap","India",5.0,5.0,5.0,5.0,9.0,30.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,59.0],[10,"Cakrawala","1 km SRM","ITB Rocketry","Indonesia",5.0,5.0,0.0,0.0,16.0,32.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,58.0],[92,"S.R.T - 1","1 km SRM","Sirius Rocket Team","Brazil",5.0,5.0,0.0,0.0,14.0,34.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,58.0],[1,"Acauã","1 km SRM","Cangaço no Espaço","Brazil",5.0,5.0,0.0,0.0,21.0,26.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,57.0],[76,"Gêmeos II","0.5 km SRM","Zenith Rocketry","Brazil",5.0,5.0,5.0,0.0,11.0,31.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,57.0],[74,"Kalpana","1 km SRM","STARC-IIITD","India",5.0,5.0,0.0,0.0,10.0,36.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,56.0],[100,"TRIDENT 2.0","1 km SRM","Team SCOUTs","India",5.0,5.0,5.0,0.0,8.0,33.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,56.0],[9,"Bosphorus2","3 km SRM","BURocket","Türkiye",5.0,5.0,5.0,0.0,0.0,37.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,52.0],[96,"Gêmeos I","1 km SRM","Zenith Rocketry","Brazil",5.0,5.0,5.0,5.0,0.0,31.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,51.0],[93,"Sector AESS UNI","1 km SRM","Sector AESS UNI","Perú",5.0,5.0,0.0,5.0,0.0,35.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,50.0],[98,"Anúbis","0.5 km SRM","ORBI","Brazil",5.0,5.0,0.0,0.0,11.0,26.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,47.0],[53,"Trix II","1 km SRM","Projeto Jupiter","Brazil",5.0,5.0,0.0,0.0,0.0,30.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,40.0],[94,"Sierra I","Hybrid/Liquid","Propulsión UNAM","Mexico",5.0,5.0,0.0,0.0,0.0,23.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,33.0],[55,"Valeria RB26","1 km SRM","Rocketry BMSCE","India",5.0,0.0,0.0,0.0,24.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,29.0],[6,"Anyna","1 km SRM","Orion Aerospace Design","Brazil",5.0,5.0,0.0,0.0,18.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,28.0],[101,"Wonka 01","1 km SRM","Longbow Dynamics","Brazil",5.0,0.0,0.0,0.0,21.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,26.0],[80,"MILVUS IV","3 km SRM","Milvus Rocket","Mexico",5.0,0.0,0.0,0.0,20.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,25.0],[71,"Helder III","1 km SRM","RocketWolf","Brazil",5.0,0.0,0.0,0.0,17.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,22.0],[73,"Hochschild T40","3 km SRM","Space Makers - TECSUP","Perú",5.0,0.0,0.0,0.0,16.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,21.0],[83,"NEXUS - T40","Hybrid/Liquid","Space Makers - TECSUP","Perú",5.0,0.0,0.0,0.0,16.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,21.0],[84,"Pontes","1 km SRM","Decola Divinamente","Brazil",0.0,0.0,0.0,0.0,17.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,17.0],[50,"Seyyah","0.5 km SRM","Zagora Space","Türkiye",5.0,0.0,0.0,0.0,12.0,0.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,17.0],[27,"Margarida I","0.5 km SRM","RocketWolf","Brazil",5.0,0.0,0.0,0.0,11.0,0.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,16.0],[20,"Hatun Mama","0.5 km SRM","Aerospace Peruvian Team","Perú",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,0.0],[34,"Kaali","1 km SRM","Team Antariksh","India",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[38,"Otis","1 km SRM","Gravidade Zero","Brazil",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[56,"VASAVISHTRA","0.5 km SRM","Team SCOUTs","India",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,0.0],[61,"Adastra","3 km SRM","KökTunga Rocketry Team","Türkiye",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[64,"Angra","Hybrid/Liquid","ITA Rocket Design","Brazil",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[69,"Eclipse","1 km SRM","Antares Foguetes","Brazil",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[70,"Gênesis","0.5 km SRM","IF ROCKETS","Brazil",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,500.0,500.0,0.0,0.0,"N/A",0.0,0.0,0.0],[75,"LACIN V2.1","3 km SRM","VoltaROCKET","Türkiye",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[78,"Major Tom","3 km SRM","Beyond UP - Stella Ignis","Mexico",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[81,"Rudra","3 km SRM","Team Antariksh","India",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[86,"Project Kalpana","1 km SRM","Team Sammard","India",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1000.0,1000.0,0.0,0.0,"N/A",0.0,0.0,0.0],[87,"Project Udhbhava","3 km SRM","Team Sammard","India",0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3000.0,3000.0,0.0,0.0,"N/A",0.0,0.0,0.0]];
+const F = {id:0,mission:1,cat:2,team:3,country:4,pu1:5,pu2:6,pu3:7,pu4:8,patch:9,video:10,mkt:11,
+  report:12,pres:13,design:14,target:15,pred:16,actual:17,perf:18,sit:19,bonus:20,ops:21,total:22};
+
+const M = RAW.map(r=>({
+  id:r[0], mission:r[1], cat:r[2], team:r[3], country:r[4],
+  pu:r[5]+r[6]+r[7]+r[8], pus:[r[5],r[6],r[7],r[8]],
+  patch:r[9], video:r[10], mkt:r[11], report:r[12], pres:r[13], design:r[14],
+  target:r[15], pred:r[16], actual:r[17], perf:r[18], sit:r[19], bonus:r[20], total:r[22]
+}));
+M.sort((a,b)=>b.total-a.total);
+M.forEach((m,i)=>m.rank=i+1);
+const CATS=[...new Set(M.map(m=>m.cat))];
+CATS.forEach(c=>{ M.filter(m=>m.cat===c).forEach((m,i)=>{m.crank=i+1; m.cn=M.filter(x=>x.cat===c).length;}); });
+
+const CRIT=[
+  {k:'pu',    n:'Progress Updates (P.U. 1–4)', cap:20,  g:'Entregas ao longo do ano'},
+  {k:'patch', n:'Mission Patch',               cap:25,  g:'Identidade da missão'},
+  {k:'video', n:'Pitch Video',                 cap:null,g:'Comunicação da missão'},
+  {k:'mkt',   n:'Ações de marketing',          cap:10,  g:'Divulgação'},
+  {k:'report',n:'Mission Report',              cap:null,g:'Documentação técnica'},
+  {k:'pres',  n:'Material de apresentação',    cap:10,  g:'Sessão presencial'},
+  {k:'design',n:'Design Implementation',       cap:100, g:'Inspeção do foguete'},
+  {k:'perf',  n:'Nota de voo (precisão de apogeu)', cap:350, g:'Voo'},
+  {k:'bonus', n:'Recuperação, LRR e slot',     cap:null,g:'Voo'}
+];
+const BAND={500:0.71,1000:0.5,3000:0.29};
+const perfScore=(target,actual)=>{
+  if(!target) return 0;
+  const k=BAND[target]??0.5;
+  return Math.max(0, 350-350*(Math.abs(target-actual)/(k*target)));
+};
+const fmt=(v,d=1)=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const i0=v=>Math.round(v).toLocaleString('pt-BR');
+
+/* Grupo de referência: missões que efetivamente chegaram ao lançamento.
+   As 57 que não chegaram zeram quase tudo e distorceriam qualquer mediana. */
+const PEERS = M.filter(m=>m.perf>0 || m.bonus>0);
+const NP = PEERS.length;
+const STAT={};
+CRIT.forEach(c=>{
+  const s=PEERS.map(m=>m[c.k]).sort((a,b)=>a-b);
+  STAT[c.k]={max:Math.max(...M.map(m=>m[c.k])), med:s.length?s[Math.floor(s.length/2)]:0};
+});
+const CEIL = CRIT.reduce((a,c)=>a+STAT[c.k].max,0);
+const CHAMP = M[0];
+
+const totalOf=o=>CRIT.reduce((a,c)=>a+(o[c.k]||0),0);
+const rankOf=(v,exclId)=>M.filter(m=>m.id!==exclId && m.total>v).length+1;
+const crankOf=(v,cat,exclId)=>M.filter(m=>m.cat===cat && m.id!==exclId && m.total>v).length+1;
+
+let cur = M.find(m=>m.team==='UFPel Rocket Team') || M[0];
+let sim = {};
+
+/* ============ seletores ============ */
+const teamSel=document.getElementById('teamSel');
+[...M].sort((a,b)=>a.team.localeCompare(b.team,'pt-BR')||a.mission.localeCompare(b.mission))
+ .forEach(m=>{ const o=document.createElement('option'); o.value=m.id;
+   o.textContent=`${m.team} — ${m.mission} (${m.cat})`; teamSel.appendChild(o); });
+teamSel.value=cur.id;
+teamSel.onchange=()=>{ cur=M.find(m=>m.id==teamSel.value); resetSim(); renderAll(); };
+document.getElementById('cmpSel').onchange=renderFall;
+
+/* ============ referência de comparação ============ */
+function refSet(){
+  const mode=document.getElementById('cmpSel').value;
+  if(mode==='catlead'){ const l=M.filter(m=>m.cat===cur.cat)[0];
+    return {label:`líder da categoria ${cur.cat} (${l.team} — ${l.mission})`, get:k=>l[k], tot:l.total, obj:l}; }
+  if(mode==='champ') return {label:`campeão geral (${CHAMP.team} — ${CHAMP.mission})`, get:k=>CHAMP[k], tot:CHAMP.total, obj:CHAMP};
+  if(mode==='catmed'){ const g=M.filter(m=>m.cat===cur.cat);
+    const md=k=>{const s=g.map(m=>m[k]).sort((a,b)=>a-b); return s[Math.floor(s.length/2)];};
+    return {label:`mediana da categoria ${cur.cat}`, get:md, tot:CRIT.reduce((a,c)=>a+md(c.k),0), obj:null}; }
+  return {label:'melhor nota de cada critério na edição', get:k=>STAT[k].max, tot:CEIL, obj:null};
+}
+
+/* ============ cascata ============ */
+function renderFall(){
+  const ref=refSet(), el=document.getElementById('fall'); el.innerHTML='';
+  const rows=CRIT.map(c=>({c, got:cur[c.k], ref:ref.get(c.k)}))
+    .map(r=>({...r, lost:Math.max(0, r.ref-r.got)}));
+  const scale=Math.max(...rows.map(r=>Math.max(r.ref,r.got)))||1;
+  const totLost=rows.reduce((a,r)=>a+r.lost,0);
+  document.getElementById('fallSub').textContent =
+    `${fmt(cur.total,2)} pontos obtidos · ${fmt(totLost,1)} de distância para ${ref.label} (${fmt(ref.tot,1)}).`;
+  [...rows].sort((a,b)=>b.lost-a.lost).forEach(r=>{
+    const w1=r.got/scale*100, w2=r.lost/scale*100;
+    const col = r.lost>=60?'var(--coral)' : r.lost>=15?'var(--amber)' : 'var(--dim)';
+    const d=document.createElement('div');
+    d.className='frow'+(r.lost>=60?' hl':'');
+    d.innerHTML=`<div class="fl">${r.c.n}</div>
+      <div class="ftrack">
+        <div class="fbar got" style="left:0;width:${w1}%"></div>
+        <div class="fbar lost" style="left:${w1}%;width:${w2}%;background:${col}"></div>
+      </div>
+      <div class="fval" style="color:${r.lost>0?col:'var(--muted)'}">${r.lost>0?'−'+fmt(r.lost,1):'—'}</div>`;
+    d.title=`${r.c.n}: ${fmt(r.got,1)} obtidos · referência ${fmt(r.ref,1)}`;
+    el.appendChild(d);
+  });
+}
+
+/* ============ cabeçalho do time ============ */
+function renderHead(){
+  document.getElementById('tScore').innerHTML=`${fmt(cur.total,2)}<small> / 1000</small>`;
+  document.getElementById('tRank').textContent=`${cur.rank}º`;
+  document.getElementById('tRankL').textContent=`geral (de ${M.length})`;
+  document.getElementById('tCRank').textContent=`${cur.crank}º`;
+  document.getElementById('tCRankL').textContent=`na categoria ${cur.cat} (de ${cur.cn})`;
+  const above=M.filter(m=>m.total>cur.total).sort((a,b)=>a.total-b.total)[0];
+  document.getElementById('tGap').textContent= above? fmt(above.total-cur.total,1) : '—';
+
+  const r=[...CRIT].map(c=>({c,gap:STAT[c.k].max-cur[c.k]})).sort((a,b)=>b.gap-a.gap);
+  const top=r[0], forte=[...CRIT].map(c=>({c,rk:PEERS.filter(m=>m[c.k]>cur[c.k]).length+1}))
+    .sort((a,b)=>a.rk-b.rk)[0];
+  document.getElementById('tTag').innerHTML =
+    `Melhor colocação por critério: <b>${forte.rk}º de ${NP} em ${forte.c.n.toLowerCase()}</b>. ` +
+    `Maior distância para o melhor da edição: <b>${top.c.n.toLowerCase()}</b>, ${fmt(top.gap,1)} pontos.`;
+}
+
+/* ============ raio-X ============ */
+function renderCrits(){
+  const el=document.getElementById('crits'); el.innerHTML='';
+  const fortes=[], lac=[];
+  CRIT.forEach(c=>{
+    const v=cur[c.k], mx=STAT[c.k].max, md=STAT[c.k].med, top=Math.max(mx,v)||1;
+    const pos=PEERS.filter(m=>m[c.k]>v).length+1;
+    const pct=v/top*100;
+    const gap=mx-v;
+    let cls,txt;
+    if(pos<=Math.ceil(NP*0.2)){cls='b-forte'; txt='entre os melhores'; fortes.push(`${c.n} — ${pos}º de ${NP}`);}
+    else if(gap>=50){cls='b-crit'; txt='perda crítica'; lac.push(`${c.n} — ${fmt(gap,0)} pontos na mesa`);}
+    else if(v>=md){cls='b-ok'; txt='na mediana ou acima';}
+    else {cls='b-lac'; txt='abaixo da mediana'; lac.push(`${c.n} — ${fmt(gap,0)} pontos na mesa`);}
+    const d=document.createElement('div'); d.className='crit';
+    d.innerHTML=`<div class="critHead">
+        <div><span class="critName">${c.n}</span> <span class="badge ${cls}">${txt}</span>
+          <div class="tiny">${c.g} · ${pos}º de ${NP} missões que chegaram à rampa</div></div>
+        <div class="critVal">${fmt(v,1)}${c.cap?`<span class="sub" style="font-weight:400"> / ${c.cap}</span>`:''}</div>
+      </div>
+      <div class="track" style="margin-top:12px">
+        <div class="bar" style="width:${pct}%"></div>
+        <div class="mark" data-l="mediana ${fmt(md,0)}" style="left:${md/top*100}%;background:var(--muted)"></div>
+        <div class="mark" data-l="melhor ${fmt(mx,0)}" style="left:${Math.min(99.5,mx/top*100)}%;background:var(--cane)"></div>
+      </div>`;
+    el.appendChild(d);
+  });
+  document.getElementById('fortes').innerHTML = fortes.length?fortes.map(f=>'· '+f).join('<br>'):'Nenhum critério no quinto superior do grupo de referência.';
+  document.getElementById('lacunas').innerHTML = lac.length?lac.map(f=>'· '+f).join('<br>'):'Nenhuma lacuna relevante.';
+}
+
+/* ============ prioridades ============ */
+function renderPrio(){
+  const el=document.getElementById('prio'); el.innerHTML='';
+  const rows=CRIT.map(c=>{
+    const gain=Math.max(0,STAT[c.k].max-cur[c.k]);
+    const nt=cur.total+gain;
+    return {c, gain, pos:cur.rank-rankOf(nt,cur.id), cpos:cur.crank-crankOf(nt,cur.cat,cur.id), nt};
+  }).filter(r=>r.gain>0.05).sort((a,b)=>b.pos-a.pos || b.gain-a.gain);
+  rows.forEach((r,i)=>{
+    const d=document.createElement('div'); d.className='prio';
+    d.innerHTML=`<b class="rk">${i+1}</b>
+      <div class="pn">${r.c.n}<small>de ${fmt(cur[r.c.k],1)} para ${fmt(STAT[r.c.k].max,1)} — melhor da edição</small></div>
+      <div class="pv" style="color:${r.pos>0?'var(--cane)':'var(--muted)'}">+${fmt(r.gain,1)} pts</div>
+      <div class="pp">${r.pos>0?`sobe ${r.pos} posiç${r.pos>1?'ões':'ão'}`:'não muda a posição'}${r.cpos>0?` · ${r.cpos} na categoria`:''}</div>`;
+    el.appendChild(d);
+  });
+}
+
+/* ============ simulador ============ */
+function resetSim(){ sim={}; CRIT.forEach(c=>sim[c.k]=cur[c.k]); sim.actual=cur.actual; }
+function simMax(k){ const c=CRIT.find(x=>x.k===k); return c.cap ?? Math.max(STAT[k].max, cur[k]); }
+
+function buildSliders(){
+  const el=document.getElementById('sliders'); el.innerHTML='';
+  CRIT.forEach(c=>{
+    if(c.k==='perf') return;
+    const mx=simMax(c.k);
+    const d=document.createElement('div'); d.className='slider';
+    d.innerHTML=`<div class="sl"><span>${c.n}</span><b><span id="v_${c.k}"></span>
+        <span class="delta" id="d_${c.k}"></span></b></div>
+      <input type="range" id="r_${c.k}" min="0" max="${mx}" step="${mx>60?1:0.5}" value="${sim[c.k]}">`;
+    el.appendChild(d);
+    d.querySelector('input').addEventListener('input',e=>{ sim[c.k]=+e.target.value; runSim(); });
+  });
+  const mxA=Math.round(cur.target*2.2);
+  const d=document.createElement('div'); d.className='slider';
+  d.innerHTML=`<div class="sl"><span>Apogeu real (alvo ${i0(cur.target)} m) → nota de voo</span>
+      <b><span id="v_actual"></span> <span class="delta" id="d_perf"></span></b></div>
+    <input type="range" id="r_actual" min="0" max="${mxA}" step="1" value="${Math.round(sim.actual)}">`;
+  document.getElementById('sliders').appendChild(d);
+  d.querySelector('input').addEventListener('input',e=>{ sim.actual=+e.target.value; runSim(); });
+}
+
+function runSim(){
+  sim.perf = perfScore(cur.target, sim.actual);
+  const tot = totalOf(sim);
+  const rk = rankOf(tot,cur.id), ck = crankOf(tot,cur.cat,cur.id);
+  document.getElementById('simTot').textContent=fmt(tot,2);
+  const dt=tot-cur.total;
+  document.getElementById('simDelta').innerHTML = Math.abs(dt)<0.05 ? 'igual ao resultado real'
+    : `<span class="${dt>0?'up':'down'}">${dt>0?'+':'−'}${fmt(Math.abs(dt),2)} pontos</span> em relação ao resultado real`;
+  const sr=document.getElementById('simRank'), sc=document.getElementById('simCRank');
+  sr.textContent=rk+'º'; sc.textContent=ck+'º';
+  sr.style.color = rk<cur.rank?'var(--cane)':rk>cur.rank?'var(--coral)':'';
+  sc.style.color = ck<cur.crank?'var(--cane)':ck>cur.crank?'var(--coral)':'';
+
+  CRIT.forEach(c=>{
+    const v=document.getElementById('v_'+c.k); if(!v) return;
+    v.textContent=fmt(sim[c.k],1);
+    const dd=document.getElementById('d_'+c.k), df=sim[c.k]-cur[c.k];
+    if(dd) dd.innerHTML = Math.abs(df)<0.05?'' : `<span class="${df>0?'up':'down'}">${df>0?'+':'−'}${fmt(Math.abs(df),1)}</span>`;
+    const r=document.getElementById('r_'+c.k);
+    if(r) r.style.setProperty('--p',(sim[c.k]/(r.max||1)*100)+'%');
+  });
+  const va=document.getElementById('v_actual');
+  if(va){ va.textContent=i0(sim.actual)+' m · '+fmt(sim.perf,1)+' pts';
+    const dp=document.getElementById('d_perf'), df=sim.perf-cur.perf;
+    dp.innerHTML=Math.abs(df)<0.05?'':`<span class="${df>0?'up':'down'}">${df>0?'+':'−'}${fmt(Math.abs(df),1)}</span>`;
+    const r=document.getElementById('r_actual'); r.style.setProperty('--p',(sim.actual/(r.max||1)*100)+'%');
+  }
+  renderLadder(tot);
+}
+
+function renderLadder(tot){
+  const el=document.getElementById('ladder');
+  const others=M.filter(m=>m.id!==cur.id);
+  const passed=others.filter(m=>m.total<tot && m.total>cur.total).sort((a,b)=>b.total-a.total);
+  const nexts=others.filter(m=>m.total>=tot).sort((a,b)=>a.total-b.total).slice(0,3);
+  let h='';
+  if(passed.length) h+=`<div class="tiny" style="margin-bottom:6px">Ultrapassa ${passed.length} missão(ões)</div>`+
+    passed.slice(0,4).map(m=>`<div class="lrow passed"><span>▲</span><span>${m.team} — ${m.mission}</span><span>${fmt(m.total,1)}</span></div>`).join('')
+    + (passed.length>4?`<div class="tiny">e mais ${passed.length-4}…</div>`:'');
+  if(nexts.length) h+=`<div class="tiny" style="margin:10px 0 6px">Próximos alvos</div>`+
+    nexts.map(m=>`<div class="lrow target"><span>→</span><span>${m.team} — ${m.mission}</span><span>+${fmt(m.total-tot+0.01,1)}</span></div>`).join('');
+  if(!h) h='<div class="tiny">Nenhuma missão à frente: este cenário lidera o Rocket Challenge.</div>';
+  el.innerHTML=h;
+}
+
+document.getElementById('reset').onclick=()=>{ resetSim(); buildSliders(); runSim(); };
+document.getElementById('presetNominal').onclick=()=>{
+  sim.bonus=200; sim.actual=cur.target; buildSliders(); runSim(); };
+document.getElementById('presetTop').onclick=()=>{
+  CRIT.forEach(c=>sim[c.k]=Math.max(cur[c.k],STAT[c.k].max)); sim.actual=cur.target; buildSliders(); runSim(); };
+
+/* ============ tabela ============ */
+let sortKey='rank', sortDir=1;
+function fillSelect(id,vals,label){ const s=document.getElementById(id);
+  s.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option>${v}</option>`).join(''); }
+fillSelect('fCat',CATS,'Todas');
+fillSelect('fCountry',[...new Set(M.map(m=>m.country))].sort(),'Todos');
+['fCat','fCountry','fSearch'].forEach(id=>document.getElementById(id).addEventListener('input',renderTable));
+document.querySelectorAll('#tbl th').forEach(th=>th.onclick=()=>{
+  const k=th.dataset.s; sortDir = (sortKey===k)? -sortDir : (k==='team'||k==='mission'||k==='cat'||k==='rank'?1:-1);
+  sortKey=k; renderTable(); });
+
+function renderTable(){
+  const c=document.getElementById('fCat').value, p=document.getElementById('fCountry').value;
+  const q=document.getElementById('fSearch').value.trim().toLowerCase();
+  let rows=M.filter(m=>(!c||m.cat===c)&&(!p||m.country===p)&&
+    (!q||m.team.toLowerCase().includes(q)||m.mission.toLowerCase().includes(q)));
+  rows=[...rows].sort((a,b)=>{ const x=a[sortKey],y=b[sortKey];
+    return (typeof x==='string'? x.localeCompare(y,'pt-BR') : x-y)*sortDir; });
+  document.getElementById('fCount').textContent=`${rows.length} de ${M.length} missões`;
+  const sitCol=s=>s==='Nominal'?'var(--cane)':s==='Major'?'var(--amber)':s==='N/A'?'var(--dim)':'var(--coral)';
+  document.getElementById('tbody').innerHTML=rows.map(m=>`
+    <tr data-id="${m.id}" class="${m.id===cur.id?'me':''}">
+      <td class="l n">${m.rank}</td>
+      <td class="l"><span class="dot" style="background:${sitCol(m.sit)}" title="Situação do voo: ${m.sit}"></span>${m.team}</td>
+      <td class="l">${m.mission}</td><td class="l">${m.cat}</td>
+      <td class="n">${fmt(m.pu,0)}</td><td class="n">${fmt(m.patch,0)}</td><td class="n">${fmt(m.video,0)}</td>
+      <td class="n">${fmt(m.mkt,0)}</td><td class="n">${fmt(m.report,1)}</td><td class="n">${fmt(m.pres,0)}</td>
+      <td class="n">${fmt(m.design,0)}</td><td class="n">${fmt(m.perf,0)}</td><td class="n">${fmt(m.bonus,0)}</td>
+      <td class="n"><b>${fmt(m.total,1)}</b></td>
+    </tr>`).join('');
+  document.querySelectorAll('#tbody tr').forEach(tr=>tr.onclick=()=>{
+    cur=M.find(m=>m.id==tr.dataset.id); teamSel.value=cur.id; resetSim(); renderAll();
+    document.getElementById('resumo').scrollIntoView({behavior:'smooth'}); });
+}
+
+/* ============ explicação ============ */
+const STEPS=[
+  {cap:'Durante o ano', h:'Progress Updates', p:'Quatro entregas de acompanhamento, 5 pontos cada. São pontos de disciplina: quem entrega no prazo leva integralmente.'},
+  {cap:'Durante o ano', h:'Patch, vídeo e marketing', p:'A missão precisa se comunicar. Patch da missão, um pitch de 2 a 5 minutos e ações de divulgação valem pontos independentes do foguete.'},
+  {cap:'Documentação', h:'Mission Report', p:'O relatório técnico é o maior bloco fora do voo — na prática, o critério que mais separa as equipes no placar.'},
+  {cap:'No local', h:'Design Implementation', p:'Inspeção do foguete construído: até 100 pontos por como o projeto virou hardware.'},
+  {cap:'No local', h:'Nota de voo', p:'Até 350 pontos pela proximidade entre o apogeu alvo e o apogeu realmente atingido, medido pela eletrônica de bordo.'},
+  {cap:'No local', h:'Recuperação, LRR e slot', p:'Revisão de prontidão de lançamento, cumprimento da janela e, sobretudo, recuperar o foguete em condições nominais. Voo e recuperação somam até 550 pontos.'}
+];
+document.getElementById('steps').innerHTML=STEPS.map(s=>
+  `<div class="step"><div class="cap">${s.cap}</div><h4>${s.h}</h4><p>${s.p}</p></div>`).join('');
+
+const GLOSS=[
+  ['P.U. 1–4','Progress Updates: relatórios periódicos de acompanhamento entregues à organização ao longo do ano.'],
+  ['SRM','Solid Rocket Motor. As categorias 0,5 km, 1 km e 3 km usam propulsão sólida; há ainda a categoria híbrida/líquida.'],
+  ['Apogeu','Altura máxima atingida pelo foguete. O alvo declarado define a categoria; o erro em relação a ele define a nota de voo.'],
+  ['LRR','Launch Readiness Review: revisão de prontidão feita antes de liberar o foguete para a rampa.'],
+  ['Nominal','O voo e a recuperação ocorreram como previsto — a condição que preserva o bônus inteiro.'],
+  ['Major','Anomalia relevante no voo ou na recuperação, sem perda total do veículo.'],
+  ['Ballistic','O sistema de recuperação não atuou e o foguete retornou em trajetória balística.'],
+  ['CATO','Catastrophe At Take-Off: falha catastrófica do motor no lançamento.'],
+  ['Not Recovered','O foguete voou mas não foi recuperado dentro das condições da competição.']
+];
+document.getElementById('gloss').innerHTML=GLOSS.map(g=>`<dt>${g[0]}</dt><dd>${g[1]}</dd>`).join('');
+
+/* curva de precisão */
+let curveT=[500,1000,3000].includes(cur.target)?cur.target:1000;
+const chips=document.getElementById('curveChips');
+[500,1000,3000].forEach(t=>{ const b=document.createElement('button'); b.className='chip'; b.type='button';
+  b.textContent=`Alvo ${i0(t)} m`; b.setAttribute('aria-pressed',t===curveT);
+  b.onclick=()=>{ curveT=t; [...chips.children].forEach(c=>c.setAttribute('aria-pressed',false));
+    b.setAttribute('aria-pressed',true); setCurve(); }; chips.appendChild(b); });
+
+function setCurve(){
+  const r=document.getElementById('curveRange');
+  r.min=0; r.max=Math.round(curveT*2); r.step=Math.max(1,Math.round(curveT/200));
+  r.value=Math.round(curveT*1.1);
+  drawCurve();
+}
+function drawCurve(){
+  const r=document.getElementById('curveRange'), a=+r.value, s=perfScore(curveT,a);
+  r.style.setProperty('--p',(a/r.max*100)+'%');
+  document.getElementById('curveVal').textContent=`${i0(a)} m → ${fmt(s,1)} pts`;
+  const err=Math.abs(a-curveT)/curveT*100;
+  document.getElementById('curveOut').innerHTML =
+    `Erro de <b>${fmt(err,1)}%</b> em relação ao alvo. ${s<=0?'Fora da faixa de tolerância: zero ponto de voo.'
+      :`Restam <b>${fmt(s,1)}</b> dos 350 pontos de voo — ${fmt(350-s,1)} perdidos por imprecisão.`}`;
+  const W=380,H=260,L=38,B=30, x0=L, x1=W-10, y0=14, y1=H-B;
+  const px=v=>x0+(v/(curveT*2))*(x1-x0), py=v=>y1-(v/350)*(y1-y0);
+  let pts=[]; for(let i=0;i<=120;i++){ const v=i/120*curveT*2; pts.push(`${px(v).toFixed(1)},${py(perfScore(curveT,v)).toFixed(1)}`); }
+  document.getElementById('curveSvg').innerHTML=`
+    <line class="ax" x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}"/>
+    <line class="ax" x1="${x0}" y1="${y0}" x2="${x0}" y2="${y1}"/>
+    <line class="gl" x1="${px(curveT)}" y1="${y0}" x2="${px(curveT)}" y2="${y1}"/>
+    <polyline class="curve" points="${pts.join(' ')}"/>
+    <circle cx="${px(a)}" cy="${py(s)}" r="5" fill="var(--gold)"/>
+    <text x="${px(curveT)}" y="${y1+14}" text-anchor="middle">alvo ${i0(curveT)} m</text>
+    <text x="${x0-6}" y="${py(350)+4}" text-anchor="end">350</text>
+    <text x="${x0-6}" y="${y1+4}" text-anchor="end">0</text>
+    <text x="${px(a)}" y="${py(s)-11}" text-anchor="middle" fill="var(--gold)">${fmt(s,0)} pts</text>`;
+}
+document.getElementById('curveRange').addEventListener('input',drawCurve);
+
+/* ============ render ============ */
+document.getElementById('peerNote').textContent =
+  `Grupo de referência: as ${NP} missões que chegaram ao lançamento, de 102 inscritas no Rocket Challenge. As demais não voaram e zeram quase todos os critérios — incluí-las na mediana faria qualquer nota parecer boa.`;
+
+function renderAll(){ renderHead(); renderFall(); renderCrits(); renderPrio(); buildSliders(); runSim(); renderTable(); }
+resetSim(); renderAll(); setCurve();
+</script>
+</body>
+</html>
