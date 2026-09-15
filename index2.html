@@ -65,6 +65,9 @@ select:focus-visible,input:focus-visible,button:focus-visible,.chip:focus-visibl
 .posrow{display:flex; gap:26px; margin-top:18px; flex-wrap:wrap}
 .pos b{display:block; font-family:Archivo; font-size:1.75rem; font-weight:800; letter-spacing:-.03em}
 .pos span{font-size:.82rem; color:var(--dim)}
+.sitline{margin-top:16px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--amber);
+  border-radius:8px; padding:11px 14px; font-size:.9rem; color:var(--muted)}
+.sitline b{color:var(--text)}
 .tagline{margin-top:18px; font-size:.95rem; color:var(--muted); border-left:2px solid var(--violet); padding-left:12px}
 
 /* ---------- cascata ---------- */
@@ -246,6 +249,7 @@ footer{padding:36px 0 60px; color:var(--dim); font-size:.83rem; border-top:1px s
         <div class="pos"><b class="num" id="tCRank">—</b><span id="tCRankL">na categoria</span></div>
         <div class="pos"><b class="num" id="tGap">—</b><span>pontos até subir 1 posição</span></div>
       </div>
+      <div class="sitline" id="tSit"></div>
       <div class="tagline" id="tTag"></div>
     </div>
 
@@ -380,6 +384,16 @@ footer{padding:36px 0 60px; color:var(--dim); font-size:.83rem; border-top:1px s
     <p class="sub">A nota não sai do voo. O voo é menos da metade dela.</p>
   </div>
   <div class="steps" id="steps"></div>
+
+  <div style="margin-top:34px">
+    <h3>O bônus de 200 pontos não é só recuperação</h3>
+    <p class="sub">A coluna soma três coisas — revisão de prontidão (LRR), cumprimento da janela de lançamento e recuperação — e a planilha não abre a divisão. Que são três coisas, e não uma, fica evidente ao cruzar a nota com a situação registrada do voo: missões classificadas como não recuperadas ou com falha catastrófica pontuaram mais neste bloco do que missões recuperadas com anomalia. A classificação do voo, sozinha, não determina a nota.</p>
+    <div class="tablewrap" style="margin-top:14px"><table>
+      <thead><tr><th class="l">Situação registrada</th><th>Missões</th><th>Menor bônus</th><th>Maior bônus</th><th class="l">Faixa observada</th></tr></thead>
+      <tbody id="sitBody"></tbody>
+    </table></div>
+    <p class="tiny" style="margin-top:12px">Os valores são múltiplos de 25. O teto do bloco de operações é 550: quando nota de voo mais bônus ultrapassa esse limite, o excedente é cortado — foi o que ocorreu com a missão de melhor pontuação da edição.</p>
+  </div>
 
   <div class="curvewrap" style="margin-top:34px">
     <div>
@@ -693,6 +707,44 @@ function renderTable(){
     document.getElementById('resumo').scrollIntoView({behavior:'smooth'}); });
 }
 
+/* ============ situação de voo ============ */
+const SITTXT={
+  'Nominal':['voo e recuperação conforme o previsto','var(--cane)'],
+  'Major':['anomalia relevante durante o voo ou a recuperação, sem perda do veículo','var(--amber)'],
+  'Ballistic':['o sistema de recuperação não atuou e o foguete retornou em trajetória balística','var(--coral)'],
+  'CATO':['falha catastrófica do motor no lançamento','var(--coral)'],
+  'Not Recovered':['o foguete voou mas não foi recuperado nas condições da competição','var(--coral)'],
+  'N/A':['a missão não chegou ao lançamento','var(--dim)']
+};
+const baseBonus=m=>Math.round((m.bonus + m.perf - Math.round(m.perf))/25)*25;
+const SITS=['Nominal','Major','Ballistic','CATO','Not Recovered'];
+
+function renderSit(){
+  const [txt,col]=SITTXT[cur.sit]||SITTXT['N/A'];
+  const el=document.getElementById('tSit');
+  el.style.borderLeftColor=col;
+  const apo = cur.actual>0 ? `Apogeu medido pela eletrônica de bordo: <b>${i0(cur.actual)} m</b>, contra ${i0(cur.target)} m de alvo. ` : '';
+  const peersSit=PEERS.filter(m=>m.sit===cur.sit);
+  const bb=baseBonus(cur);
+  const cmp = cur.sit==='N/A' ? '' :
+    `No bloco recuperação/LRR/slot a missão recebeu <b>${fmt(bb,0)}</b>; entre as ${peersSit.length} missões com a mesma situação registrada, a faixa foi de ${fmt(Math.min(...peersSit.map(baseBonus)),0)} a ${fmt(Math.max(...peersSit.map(baseBonus)),0)}.`;
+  el.innerHTML=`Situação do voo registrada na planilha: <b>${cur.sit}</b> — ${txt}. ${apo}${cmp}`;
+}
+
+function renderSitTable(){
+  document.getElementById('sitBody').innerHTML=SITS.map(s=>{
+    const g=PEERS.filter(m=>m.sit===s); if(!g.length) return '';
+    const b=g.map(baseBonus), mn=Math.min(...b), mx=Math.max(...b);
+    const L=0, R=225;
+    const x1=(mn-L)/(R-L)*100, w=Math.max(3,(mx-mn)/(R-L)*100);
+    return `<tr class="${s===cur.sit?'me':''}">
+      <td class="l"><span class="dot" style="background:${SITTXT[s][1]}"></span>${s}</td>
+      <td class="n">${g.length}</td><td class="n">${fmt(mn,0)}</td><td class="n">${fmt(mx,0)}</td>
+      <td class="l"><span style="display:inline-block;width:150px;height:8px;background:var(--panel2);border-radius:4px;position:relative;vertical-align:0">
+        <span style="position:absolute;left:${x1.toFixed(0)}%;width:${w.toFixed(0)}%;top:0;bottom:0;background:${SITTXT[s][1]};border-radius:4px;opacity:.85"></span></span></td></tr>`;
+  }).join('');
+}
+
 /* ============ benchmark por programa ============ */
 const PODIUM = M.slice(0,10);
 const medOf=(arr,k)=>{const s=arr.map(m=>m[k]).sort((a,b)=>a-b); return s[Math.floor(s.length/2)];};
@@ -714,7 +766,7 @@ function renderField(){
   document.getElementById('fieldStats').innerHTML=`
     <div><b class="num">${pad}</b><span>missões chegaram à rampa, de ${M.length}</span></div>
     <div><b class="num" style="color:var(--cane)">${nom}</b><span>recuperaram em condição nominal (${fmt(nom/pad*100,0)}%)</span></div>
-    <div><b class="num" style="color:var(--amber)">${pad-nom}</b><span>perderam parte do bônus por anomalia</span></div>
+    <div><b class="num" style="color:var(--amber)">${pad-nom}</b><span>não tiveram recuperação nominal</span></div>
     <div><b class="num">${mine.n}</b><span>${mine.n===1?'missão inscrita':'missões inscritas'} pelo programa ${mine.team}</span></div>`;
 }
 
@@ -777,7 +829,7 @@ const STEPS=[
   {cap:'Documentação', h:'Mission Report', p:'O relatório técnico é o maior bloco fora do voo — na prática, o critério que mais separa as equipes no placar.'},
   {cap:'No local', h:'Design Implementation', p:'Inspeção do foguete construído: até 100 pontos por como o projeto virou hardware.'},
   {cap:'No local', h:'Nota de voo', p:'Até 350 pontos pela proximidade entre o apogeu alvo e o apogeu realmente atingido, medido pela eletrônica de bordo.'},
-  {cap:'No local', h:'Recuperação, LRR e slot', p:'Revisão de prontidão de lançamento, cumprimento da janela e, sobretudo, recuperar o foguete em condições nominais. Voo e recuperação somam até 550 pontos.'}
+  {cap:'No local', h:'Recuperação, LRR e slot', p:'Três avaliações somadas numa coluna só: revisão de prontidão, cumprimento da janela de lançamento e condição da recuperação. Vale até 225 pontos, e o bloco inteiro de voo mais bônus é limitado a 550.'}
 ];
 document.getElementById('steps').innerHTML=STEPS.map(s=>
   `<div class="step"><div class="cap">${s.cap}</div><h4>${s.h}</h4><p>${s.p}</p></div>`).join('');
@@ -837,7 +889,7 @@ document.getElementById('curveRange').addEventListener('input',drawCurve);
 document.getElementById('peerNote').textContent =
   `Grupo de referência: as ${NP} missões que chegaram ao lançamento, de 102 inscritas no Rocket Challenge. As demais não voaram e zeram quase todos os critérios — incluí-las na mediana faria qualquer nota parecer boa.`;
 
-function renderAll(){ renderHead(); renderFall(); renderCrits(); renderField(); drawRadar(); renderProgs(); renderPrio(); buildSliders(); runSim(); renderTable(); }
+function renderAll(){ renderHead(); renderSit(); renderSitTable(); renderFall(); renderCrits(); renderField(); drawRadar(); renderProgs(); renderPrio(); buildSliders(); runSim(); renderTable(); }
 resetSim(); renderAll(); setCurve();
 </script>
 </body>
