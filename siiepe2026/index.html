@@ -277,6 +277,28 @@ p{margin:0 0 1em}
 .foguete-ano{max-width:none;height:230px;width:auto;border-radius:6px}
 @media (max-width:600px){.comparativo{grid-template-columns:1fr}.foguete-ano{height:190px}}
 
+/* saiba mais (cartão que gira) */
+.saiba{perspective:1400px;max-width:780px;margin-top:30px;scroll-margin-top:96px}
+.saiba-in{display:grid;transform-style:preserve-3d;transition:transform .8s cubic-bezier(.3,.1,.2,1)}
+.saiba.virado .saiba-in{transform:rotateY(180deg)}
+.saiba .face{grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:14px;padding:24px 26px;min-height:230px}
+.saiba .frente{background:var(--noite);color:#fff;border:0;text-align:left;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 20px;align-items:center;align-content:center;font:inherit}
+.saiba .frente:hover .giro svg{transform:rotate(-200deg)}
+.saiba .giro svg{display:block;transition:transform .6s ease}
+.saiba-txt{font-size:18px;color:var(--noite-suave)}
+.saiba-txt b{display:block;font:800 clamp(34px,6vw,52px)/1 var(--titulo);color:#fff;margin-bottom:8px}
+.saiba-dica{grid-column:2;font:600 15px var(--titulo);color:#FF8A8B}
+.saiba .verso{transform:rotateY(180deg);background:var(--papel);border:2px solid var(--verm)}
+.saiba .verso h3{margin-bottom:10px}
+.saiba .verso p{font-size:16px}
+.saiba-acoes{display:flex;flex-wrap:wrap;gap:10px}
+.saiba.provoca .saiba-in{animation:provoca 1.6s ease}
+@keyframes provoca{0%,100%{transform:rotateY(0)}35%{transform:rotateY(-28deg)}65%{transform:rotateY(12deg)}}
+@media (max-width:560px){.saiba .frente{grid-template-columns:1fr}.saiba-dica{grid-column:1}}
+@media (prefers-reduced-motion:reduce){
+  .saiba.virado .saiba-in{transform:none}.saiba .verso{transform:none}
+  .saiba.virado .frente,.saiba:not(.virado) .verso{visibility:hidden}}
+
 /* apoio */
 .grade-apoio{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
 .slot{background:var(--papel);border:1.5px dashed var(--linha);border-radius:10px;aspect-ratio:3/2;display:grid;place-items:center;padding:14px;text-align:center;color:var(--suave);font-size:14px}
@@ -453,7 +475,7 @@ footer a{color:#fff}
   <div class="envelope">
     <div class="cabeca">
       <h2 id="t-lasc">3º lugar na categoria 500 m da LASC 2026</h2>
-      <p>A 7ª Latin American Space Challenge aconteceu de 2 a 5 de setembro de 2026 no Sugarcane Launch Range, em Iacanga (SP), com 102 missões no Rocket Challenge. A missão Minuano disputou a categoria de apogeu 500 m com motor de propelente sólido.</p>
+      <p>A 7ª Latin American Space Challenge aconteceu de 2 a 5 de setembro de 2026 no Sugarcane Launch Range, em Iacanga (SP), com 102 missões no Rocket Challenge. A missão Minuano disputou a categoria de apogeu 500 m com motor de propelente sólido. Para entender em detalhe como a nota é calculada, <a href="#lasc" data-rolar="saiba-mais">veja o quadro “Saiba mais”</a>.</p>
     </div>
 
     <div class="duas">
@@ -493,6 +515,25 @@ footer a{color:#fff}
     <p style="color:var(--suave);margin:10px 0 16px;max-width:70ch">A nota da LASC vai muito além do voo: soma acompanhamento ao longo do ano, documentação, divulgação, inspeção do foguete e operação de lançamento. Cada linha mostra a nota da Minuano diante do máximo (ou da melhor nota da edição) e os trabalhos da SIIEPE que tratam daquela parte da missão.</p>
     <div class="criterios" id="criterios"></div>
     <p class="no-lasc" style="margin-top:14px">Barra vermelha: nota máxima atingida. Fonte: planilha oficial “2026 LASC Final Scoreboard”, aba Rocket Challenge, conforme a análise do repositório UFPel-Rocket/info.</p>
+
+    <div class="saiba" id="saiba-mais">
+      <div class="saiba-in">
+        <button type="button" class="face frente" aria-expanded="false" aria-controls="saiba-verso">
+          <span class="giro" aria-hidden="true"><svg viewBox="0 0 48 48" width="48" height="48"><path d="M38 14a17 17 0 1 0 4 14" fill="none" stroke="#F61416" stroke-width="5" stroke-linecap="round"/><path d="M42 5v11H31" fill="none" stroke="#F61416" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="saiba-txt"><b>Saiba mais</b>Como a LASC pontua uma missão, e por que o Minuano fez 647,31 pontos</span>
+          <span class="saiba-dica">Toque para virar o quadro</span>
+        </button>
+        <div class="face verso" id="saiba-verso">
+          <h3>Para quem quer entender a pontuação e os resultados</h3>
+          <p>A nota da LASC soma muitas partes além do voo, e o placar oficial é uma planilha extensa e difícil de ler. A própria equipe preparou um infográfico que traduz esses números: mostra para onde foram os pontos das 102 missões, explica cada critério e a curva de precisão da nota de voo, compara a Minuano com o pódio, aponta o que atacar primeiro e traz um simulador de cenários e o placar completo.</p>
+          <div class="saiba-acoes">
+            <a class="botao" href="https://ufpel-rocket.github.io/info/index2.html" target="_blank" rel="noopener">Abrir o infográfico da LASC 2026</a>
+            <button type="button" class="botao sec saiba-volta">Virar de volta</button>
+          </div>
+          <p class="no-lasc" style="margin:12px 0 0">UFPel Rocket Team, “LASC 2026, Rocket Challenge: onde estão os pontos”. Disponível em <a href="https://ufpel-rocket.github.io/info/index2.html" target="_blank" rel="noopener">ufpel-rocket.github.io/info/index2.html</a>.</p>
+        </div>
+      </div>
+    </div>
 
     <div class="contribui" style="margin-top:28px;max-width:76ch">
       <strong>Ensino, pesquisa e extensão no mesmo voo.</strong> Os trabalhos de ensino mostram estudantes conduzindo o ciclo completo de engenharia, do projeto ao ensaio; o de pesquisa sistematiza o método de gestão que sustenta a equipe; o de extensão leva o foguetemodelismo às redes e à escola. As notas integrais em acompanhamento e divulgação e o voo a 60 m do alvo são resultado desse conjunto, e as perdas em apresentação e operação de lançamento já aparecem nos planos dos próprios autores para os próximos ciclos.
@@ -1037,6 +1078,34 @@ $("#criterios").innerHTML = CRITERIOS.map(c => {
     <div class="liga">${c.trab.length ? c.trab.map(id => `<a href="#trabalhos" data-abrir="${id}">${esc(pub(id).curto)}</a>`).join("<br>") : `<span class="vazio">Nenhum trabalho trata deste ponto; é a lacuna apontada pela própria equipe.</span>`}</div>
   </div>`;
 }).join("");
+
+/* ------------------------------------------------------------------
+   SAIBA MAIS: cartão que gira
+------------------------------------------------------------------ */
+(function(){
+  const c = document.getElementById("saiba-mais");
+  const frente = c.querySelector(".frente"), verso = c.querySelector(".verso");
+  const vira = v => {
+    c.classList.toggle("virado", v);
+    frente.setAttribute("aria-expanded", v);
+    frente.inert = v; verso.inert = !v;
+    setTimeout(() => (v ? verso.querySelector("a.botao") : frente).focus({preventScroll:true}), 350);
+  };
+  verso.inert = true;
+  frente.addEventListener("click", () => vira(true));
+  c.querySelector(".saiba-volta").addEventListener("click", () => vira(false));
+  const provoca = () => { c.classList.remove("provoca"); void c.offsetWidth; c.classList.add("provoca"); };
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting && !c.classList.contains("virado")) { provoca(); io.disconnect(); } }), {threshold:.6});
+    io.observe(c);
+  }
+  document.addEventListener("click", e => {
+    const a = e.target.closest("[data-rolar]"); if (!a) return;
+    e.preventDefault();
+    document.getElementById(a.dataset.rolar).scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"center"});
+    setTimeout(provoca, 600);
+  });
+})();
 
 /* ------------------------------------------------------------------
    APOIO
